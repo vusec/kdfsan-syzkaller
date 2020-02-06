@@ -86,8 +86,9 @@ type archConfig struct {
 
 var archConfigs = map[string]*archConfig{
 	"linux/amd64": {
-		Qemu:      "qemu-system-x86_64",
-		QemuArgs:  "-enable-kvm -cpu host,migratable=off",
+		Qemu: "qemu-system-x86_64",
+		// QemuArgs:  "-enable-kvm -cpu host,migratable=off",
+		QemuArgs:  "-enable-kvm -cpu qemu64,+smep,-smap -rtc base=localtime,clock=vm", // TODO: not sure if -rtc is necessary
 		TargetDir: "/",
 		// e1000e fails on recent Debian distros with:
 		// Initialization of device e1000e failed: failed to find romfile "efi-e1000e.rom
@@ -184,13 +185,13 @@ var archConfigs = map[string]*archConfig{
 
 var linuxCmdline = []string{
 	"earlyprintk=serial",
-	"oops=panic",
-	"nmi_watchdog=panic",
-	"panic_on_warn=1",
-	"panic=1",
+	//"oops=panic",
+	//"nmi_watchdog=panic",
+	//"panic_on_warn=1",
+	//"panic=1",
 	"ftrace_dump_on_oops=orig_cpu",
-	"rodata=n",
-	"vsyscall=native",
+	//"rodata=n",
+	//"vsyscall=native",
 	"net.ifnames=0",
 	"biosdevname=0",
 }

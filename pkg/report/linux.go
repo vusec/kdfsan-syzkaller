@@ -860,7 +860,7 @@ func warningStackFmt(skip ...string) *stackFmt {
 }
 
 var linuxOopses = append([]*oops{
-	{
+	/* {
 		[]byte("BUG:"),
 		[]oopsFormat{
 			{
@@ -1094,7 +1094,7 @@ var linuxOopses = append([]*oops{
 			// pkg/host output in debug mode.
 			compile("BUG: no syscalls can create resource"),
 		},
-	},
+	}, */
 	{
 		[]byte("WARNING:"),
 		[]oopsFormat{
