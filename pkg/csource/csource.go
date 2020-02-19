@@ -276,7 +276,7 @@ func (ctx *context) emitCall(w *bytes.Buffer, call prog.ExecCall, ci int, haveCo
 func (ctx *context) emitCallName(w *bytes.Buffer, call prog.ExecCall, native bool) {
 	callName := call.Meta.CallName
 	if native {
-		fmt.Fprintf(w, "syscall(%v%v", ctx.sysTarget.SyscallPrefix, callName)
+		fmt.Fprintf(w, "syscall(%v%v + 600", ctx.sysTarget.SyscallPrefix, callName)
 	} else if strings.HasPrefix(callName, "syz_") {
 		fmt.Fprintf(w, "%v(", callName)
 	} else {
