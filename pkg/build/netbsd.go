@@ -136,7 +136,7 @@ func (ctx netbsd) copyKernelToDisk(targetArch, vmType, outputDir, kernel string)
 		return fmt.Errorf("error syncing the instance %v", err)
 	}
 	// Make sure that the command has executed properly.
-	rep := inst.MonitorExecution(outc, errc, reporter, vm.ExitNormal)
+	rep := inst.MonitorExecution(outc, errc, reporter, vm.ExitNormal, nil)
 	if rep != nil {
 		return fmt.Errorf("error executing sync: %v", rep.Title)
 	}

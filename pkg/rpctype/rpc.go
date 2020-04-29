@@ -94,6 +94,16 @@ func (cli *RPCClient) Close() {
 	cli.c.Close()
 }
 
+func RPCCallAsync(addr, method string, args, reply interface{}) error {
+	c, err := NewRPCClient(addr)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	c.c.Go(method, args, reply, nil)
+	return nil
+}
+
 func RPCCall(addr, method string, args, reply interface{}) error {
 	c, err := NewRPCClient(addr)
 	if err != nil {
@@ -101,6 +111,19 @@ func RPCCall(addr, method string, args, reply interface{}) error {
 	}
 	defer c.Close()
 	return c.Call(method, args, reply)
+}
+
+func RPCCallTimeout(d time.Duration, addr, method string, args, reply interface{}) error {
+	c, err := NewRPCClient(addr)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	c.conn.SetDeadline(time.Now().Add(d))
+	defer c.conn.SetDeadline(time.Time{})
+	c.c.Call(method, args, reply)
+	return nil
 }
 
 func setupKeepAlive(conn net.Conn, keepAlive time.Duration) {

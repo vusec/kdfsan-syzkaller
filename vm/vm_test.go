@@ -345,7 +345,7 @@ func testMonitorExecution(t *testing.T, test *Test) {
 		test.Body(testInst.outc, testInst.errc)
 		done <- true
 	}()
-	rep := inst.MonitorExecution(outc, errc, reporter, test.Exit)
+	rep := inst.MonitorExecution(outc, errc, reporter, test.Exit, nil)
 	<-done
 	if test.Report != nil && rep == nil {
 		t.Fatalf("got no report")

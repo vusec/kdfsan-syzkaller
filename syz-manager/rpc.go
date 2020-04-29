@@ -55,6 +55,10 @@ type RPCManagerView interface {
 	newInput(inp rpctype.RPCInput, sign signal.Signal) bool
 	candidateBatch(size int) []rpctype.RPCCandidate
 	rotateCorpus() bool
+	saveSnapshot(vmName string)
+	loadSnapshot(vmName string)
+	checkIsSaveSnapDone(vmName string) bool
+	checkEnableKasper(vmName string) bool
 }
 
 func startRPCServer(mgr *Manager) (int, error) {
@@ -204,6 +208,26 @@ func (serv *RPCServer) Check(a *rpctype.CheckArgs, r *int) error {
 		calls[serv.target.Syscalls[call]] = true
 	}
 	serv.rotator = prog.MakeRotator(serv.target, calls, serv.rnd)
+	return nil
+}
+
+func (serv *RPCServer) SaveSnapshot(a *rpctype.NameArg, r *int) error {
+	serv.mgr.saveSnapshot(a.Name)
+	return nil
+}
+
+func (serv *RPCServer) LoadSnapshot(a *rpctype.NameArg, r *int) error {
+	serv.mgr.loadSnapshot(a.Name)
+	return nil
+}
+
+func (serv *RPCServer) CheckIsSaveSnapDone(a *rpctype.NameArg, r *rpctype.BoolRes) error {
+	r.B = serv.mgr.checkIsSaveSnapDone(a.Name)
+	return nil
+}
+
+func (serv *RPCServer) CheckEnableKasper(a *rpctype.NameArg, r *rpctype.BoolRes) error {
+	r.B = serv.mgr.checkEnableKasper(a.Name)
 	return nil
 }
 

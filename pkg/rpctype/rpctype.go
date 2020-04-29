@@ -69,6 +69,14 @@ type PollRes struct {
 	MaxSignal  signal.Serial
 }
 
+type NameArg struct {
+	Name string
+}
+
+type BoolRes struct {
+	B bool
+}
+
 type HubConnectArgs struct {
 	// Client/Key are used for authentication.
 	Client string

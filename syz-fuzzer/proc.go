@@ -17,6 +17,7 @@ import (
 	"github.com/google/syzkaller/pkg/hash"
 	"github.com/google/syzkaller/pkg/ipc"
 	"github.com/google/syzkaller/pkg/log"
+	"github.com/google/syzkaller/pkg/osutil"
 	"github.com/google/syzkaller/pkg/rpctype"
 	"github.com/google/syzkaller/pkg/signal"
 	"github.com/google/syzkaller/prog"
@@ -277,16 +278,38 @@ func (proc *Proc) enqueueCallTriage(p *prog.Prog, flags ProgTypes, callIndex int
 	})
 }
 
+var tmpCtr = 0 ////
+
 func (proc *Proc) executeRaw(opts *ipc.ExecOpts, p *prog.Prog, stat Stat) *ipc.ProgInfo {
 	if opts.Flags&ipc.FlagDedupCover == 0 {
 		log.Fatalf("dedup cover is not enabled")
 	}
 
+	// Ensures rpc calls unrelated to snapshotting are not made during testing
+	proc.fuzzer.rpcMu.Lock()
+	defer proc.fuzzer.rpcMu.Unlock()
+
 	// Limit concurrency window and do leak checking once in a while.
 	ticket := proc.fuzzer.gate.Enter()
 	defer proc.fuzzer.gate.Leave(ticket)
 
+	enableKasper := false
+	if tmpCtr != 0 { ////
+		log.Logf(0, "*** proc.executeRaw: Requesting snapshot save... ***\n")
+		enableKasper = proc.fuzzer.cmdManagerToSaveSnapshot()
+		log.Logf(0, "*** proc.executeRaw: Snapshot taken! Returned enableKasper: %t ***\n", enableKasper)
+	}
+
 	proc.logProgram(opts, p)
+
+	if enableKasper {
+		log.Logf(0, "*** proc.executeRaw: Enabling Kasper... ***\n")
+		if _, err := osutil.RunCmd(time.Minute, "", "bash", "-c", "cat /sys/kernel/debug/kasper/enable"); err != nil {
+			log.Logf(0, "Failed to enable Kasper: %v", err)
+		}
+		log.Logf(0, "*** proc.executeRaw: Kasper enabled ***\n")
+	}
+
 	for try := 0; ; try++ {
 		atomic.AddUint64(&proc.fuzzer.stats[stat], 1)
 		output, info, hanged, err := proc.env.Exec(opts, p)
@@ -300,6 +323,18 @@ func (proc *Proc) executeRaw(opts *ipc.ExecOpts, p *prog.Prog, stat Stat) *ipc.P
 			continue
 		}
 		log.Logf(2, "result hanged=%v: %s", hanged, output)
+
+		if tmpCtr != 0 { ////
+			if enableKasper {
+				log.Logf(0, "*** proc.executeRaw: Finished test WITH Kasper! Requesting snapshot load... ***\n")
+				proc.fuzzer.cmdManagerToLoadSnapshot()
+				log.Fatalf("cmdManagerToLoadSnapshot should not return")
+			} else {
+				log.Logf(0, "*** proc.executeRaw: Finished test WITHOUT Kasper! Continuing... ***\n")
+			}
+		}
+		tmpCtr++ ////
+
 		return info
 	}
 }

@@ -145,6 +145,10 @@ func (inst *Instance) Close() {
 	os.RemoveAll(inst.workdir)
 }
 
+func (inst *Instance) GetWorkDir() string {
+	return inst.workdir
+}
+
 type ExitCondition int
 
 const (
@@ -162,7 +166,7 @@ const (
 // Exit says which exit modes should be considered as errors/OK.
 // Returns a non-symbolized crash report, or nil if no error happens.
 func (inst *Instance) MonitorExecution(outc <-chan []byte, errc <-chan error,
-	reporter report.Reporter, exit ExitCondition) (rep *report.Report) {
+	reporter report.Reporter, exit ExitCondition, snapshotOpFailedC <-chan bool) (rep *report.Report) {
 	mon := &monitor{
 		inst:     inst,
 		outc:     outc,
@@ -175,6 +179,10 @@ func (inst *Instance) MonitorExecution(outc <-chan []byte, errc <-chan error,
 	defer ticker.Stop()
 	for {
 		select {
+		case snapshotOpFailed := <-snapshotOpFailedC:
+			if snapshotOpFailed {
+				return mon.extractError("snapshot operation failed")
+			}
 		case err := <-errc:
 			switch err {
 			case nil:

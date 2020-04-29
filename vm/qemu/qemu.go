@@ -347,6 +347,7 @@ func (inst *instance) boot() error {
 		"-display", "none",
 		"-serial", "stdio",
 		"-no-reboot",
+		"-monitor", "unix:" + filepath.Join(inst.workdir, "QEMU-MON-SOCKET,server,nowait"),
 	}
 	args = append(args, splitArgs(inst.cfg.QemuArgs, filepath.Join(inst.workdir, "template"))...)
 	if inst.image == "9p" {
@@ -407,6 +408,12 @@ func (inst *instance) boot() error {
 	var tee io.Writer
 	if inst.debug {
 		tee = os.Stdout
+	} else {
+		var err error
+		tee, err = os.Create(filepath.Join(inst.workdir, "log"))
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 	}
 	inst.merger = vmimpl.NewOutputMerger(tee)
 	inst.merger.Add("qemu", inst.rpipe)
@@ -491,7 +498,12 @@ func (inst *instance) Run(timeout time.Duration, stop <-chan bool, command strin
 	if err != nil {
 		return nil, nil, err
 	}
+
 	inst.merger.Add("ssh", rpipe)
+
+	// Start process in background so SSH is not connected indefinitely
+	// Note: Writing to /dev/kmsg cuts off messages
+	command = command + " &> /dev/console &"
 
 	sshArgs := vmimpl.SSHArgs(inst.debug, inst.sshkey, inst.port)
 	args := strings.Split(command, " ")
@@ -557,7 +569,10 @@ func (inst *instance) Run(timeout time.Duration, stop <-chan bool, command strin
 		cmd.Process.Kill()
 		cmd.Wait()
 	}()
-	return inst.merger.Output, errc, nil
+
+	// Returning nil as stop instead of errc because it _seems_ to fix an issue where manager loses connection with the fuzzer
+	// This bug presumably happened because the ssh command immediately returns, so there is no connection
+	return inst.merger.Output, nil, nil
 }
 
 func (inst *instance) Diagnose() ([]byte, bool) {

@@ -42,6 +42,7 @@ var (
 	flagConfig = flag.String("config", "", "configuration file")
 	flagDebug  = flag.Bool("debug", false, "dump all VM output to console")
 	flagBench  = flag.String("bench", "", "write execution statistics into this file periodically")
+	instsMap   = make(map[string]*InstSnapInfo)
 )
 
 type Manager struct {
@@ -296,6 +297,7 @@ func (mgr *Manager) vmLoop() {
 	if instancesPerRepro > vmCount {
 		instancesPerRepro = vmCount
 	}
+
 	bootInstance := make(chan int)
 	go func() {
 		for i := 0; i < vmCount; i++ {
@@ -527,6 +529,14 @@ func (mgr *Manager) runInstance(index int) (*Crash, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create instance: %v", err)
 	}
+	vmStr := fmt.Sprintf("vm-%v", index)
+	instsMap[vmStr] = &InstSnapInfo{
+		monPath:            filepath.Join(inst.GetWorkDir(), "QEMU-MON-SOCKET"),
+		snapshotWasLoaded:  false,
+		snapshotOpFinished: false,
+		snapshotOpFailed:   make(chan bool),
+	}
+	defer delete(instsMap, vmStr) // instsMap[vmStr] should be deleted after the inst.Close operation, otherwise an RPC call could access deleted mem; hence this defer comes first
 	defer inst.Close()
 
 	fwdAddr, err := inst.Forward(mgr.port)
@@ -568,7 +578,7 @@ func (mgr *Manager) runInstance(index int) (*Crash, error) {
 		return nil, fmt.Errorf("failed to run fuzzer: %v", err)
 	}
 
-	rep := inst.MonitorExecution(outc, errc, mgr.reporter, vm.ExitTimeout)
+	rep := inst.MonitorExecution(outc, errc, mgr.reporter, vm.ExitTimeout, instsMap[vmStr].snapshotOpFailed)
 	if rep == nil {
 		// This is the only "OK" outcome.
 		log.Logf(0, "vm-%v: running for %v, restarting", index, time.Since(start))
@@ -1086,6 +1096,70 @@ func (mgr *Manager) rotateCorpus() bool {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 	return mgr.phase == phaseTriagedHub
+}
+
+type InstSnapInfo struct {
+	monPath            string
+	snapshotWasLoaded  bool
+	snapshotOpFinished bool
+	snapshotOpFailed   chan bool
+	monMu              sync.Mutex
+}
+
+func (mgr *Manager) sendMonitorCmd(vmName string, cmd string) {
+	//log.Logf(1, "************ (%v) manager.sendMonitorCmd: sending command '%s' to monitior at socket %s ************\n", vmName, cmd, instsMap[vmName].monPath)
+	failCount := 0
+	const maxFailCount = 2
+	for {
+		_, err := osutil.RunCmd(time.Minute, "", "bash", "-c", "echo '"+cmd+"' | socat -t10000 - unix-connect:"+instsMap[vmName].monPath)
+		if err == nil {
+			break
+		}
+		failCount++
+		if failCount >= maxFailCount {
+			log.Logf(0, "************ (%v) manager.sendMonitorCmd: monitor returned error (%v). failCount = %d. Too many failures. Restarting VM... ************\n", vmName, err, failCount)
+			instsMap[vmName].snapshotOpFailed <- true
+			return
+		}
+		log.Logf(0, "************ (%v) manager.sendMonitorCmd: monitor returned error (%v). failCount = %d. Trying command again... ************\n", vmName, err, failCount)
+	}
+	//log.Logf(1, "************ (%v) manager.sendMonitorCmd: commmand '%s' finished successfully ************\n", vmName, cmd)
+	instsMap[vmName].snapshotOpFinished = true
+}
+
+func (mgr *Manager) saveSnapshot(vmName string) {
+	instsMap[vmName].monMu.Lock()
+	defer instsMap[vmName].monMu.Unlock()
+
+	mgr.sendMonitorCmd(vmName, "savevm testsnap")
+	instsMap[vmName].snapshotWasLoaded = false
+}
+
+func (mgr *Manager) loadSnapshot(vmName string) {
+	instsMap[vmName].monMu.Lock()
+	defer instsMap[vmName].monMu.Unlock()
+
+	mgr.sendMonitorCmd(vmName, "loadvm testsnap")
+	instsMap[vmName].snapshotWasLoaded = true
+}
+
+func (mgr *Manager) checkIsSaveSnapDone(vmName string) bool {
+	instsMap[vmName].monMu.Lock()
+	defer instsMap[vmName].monMu.Unlock()
+
+	b := instsMap[vmName].snapshotOpFinished
+	//log.Logf(1, "************ (%v) manager.checkIsSaveSnapDone: Received call! Returning %t. ************\n", vmName, b)
+	return b
+}
+
+func (mgr *Manager) checkEnableKasper(vmName string) bool {
+	instsMap[vmName].monMu.Lock()
+	defer instsMap[vmName].monMu.Unlock()
+
+	b := !(instsMap[vmName].snapshotWasLoaded) // kasper should be enabled on the first run, i.e., before loading the snapshot
+	//log.Logf(1, "************ (%v) manager.checkEnableKasper: Received call! Returning %t. ************\n", vmName, b)
+	instsMap[vmName].snapshotOpFinished = false // maybe this should be set somewhere else...
+	return b
 }
 
 func (mgr *Manager) collectUsedFiles() {
