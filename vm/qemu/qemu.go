@@ -48,6 +48,7 @@ type Config struct {
 	CPU         int    `json:"cpu"`      // number of VM CPUs
 	Mem         int    `json:"mem"`      // amount of VM memory in MiB
 	Snapshot    bool   `json:"snapshot"` // For building kernels without -snapshot (for pkg/build)
+	LogsPath string `json:"logs_path"` // where to store the logs
 }
 
 type Pool struct {
@@ -410,7 +411,13 @@ func (inst *instance) boot() error {
 		tee = os.Stdout
 	} else {
 		var err error
-		tee, err = os.Create(filepath.Join(inst.workdir, "log"))
+		var logFileName = filepath.Join(inst.workdir, "log")
+		if inst.cfg.LogsPath != "" {
+			var instance = filepath.Base(inst.workdir)
+			logFileName = fmt.Sprintf("%s-log", instance)
+			logFileName = filepath.Join(inst.cfg.LogsPath, logFileName)
+		}
+		tee, err = os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
