@@ -59,6 +59,7 @@ type RPCManagerView interface {
 	loadSnapshot(vmName string)
 	checkIsSaveSnapDone(vmName string) bool
 	checkEnableKasper(vmName string) bool
+	getFuzzingTime() uint64
 }
 
 func startRPCServer(mgr *Manager) (int, error) {
@@ -325,6 +326,7 @@ func (serv *RPCServer) Poll(a *rpctype.PollArgs, r *rpctype.PollRes) error {
 			f.inputs = nil
 		}
 	}
+	r.Fuzzing = serv.mgr.getFuzzingTime()
 	log.Logf(4, "poll from %v: candidates=%v inputs=%v maxsignal=%v",
 		a.Name, len(r.Candidates), len(r.NewInputs), len(r.MaxSignal.Elems))
 	return nil

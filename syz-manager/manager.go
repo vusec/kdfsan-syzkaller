@@ -1162,6 +1162,10 @@ func (mgr *Manager) checkEnableKasper(vmName string) bool {
 	return b
 }
 
+func (mgr *Manager) getFuzzingTime() uint64 {
+	return uint64(mgr.fuzzingTime) / 1e9
+}
+
 func (mgr *Manager) collectUsedFiles() {
 	if mgr.vmPool == nil {
 		return

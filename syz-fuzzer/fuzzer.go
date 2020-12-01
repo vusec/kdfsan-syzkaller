@@ -371,6 +371,7 @@ func (fuzzer *Fuzzer) poll(needCandidates bool, stats map[string]uint64) bool {
 		log.Fatalf("Manager.Poll call failed: %v", err)
 	}
 	maxSignal := r.MaxSignal.Deserialize()
+	log.Logf(0, "fuzzing=%v", r.Fuzzing)
 	log.Logf(1, "poll: candidates=%v inputs=%v signal=%v",
 		len(r.Candidates), len(r.NewInputs), maxSignal.Len())
 	fuzzer.addMaxSignal(maxSignal)

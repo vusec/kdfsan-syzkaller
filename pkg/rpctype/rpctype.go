@@ -67,6 +67,7 @@ type PollRes struct {
 	Candidates []RPCCandidate
 	NewInputs  []RPCInput
 	MaxSignal  signal.Serial
+	Fuzzing    uint64
 }
 
 type NameArg struct {
