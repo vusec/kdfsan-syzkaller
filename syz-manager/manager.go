@@ -1152,12 +1152,12 @@ func (mgr *Manager) checkIsSaveSnapDone(vmName string) bool {
 	return b
 }
 
-func (mgr *Manager) checkEnableKasper(vmName string) bool {
+func (mgr *Manager) checkEnableKdfsan(vmName string) bool {
 	instsMap[vmName].monMu.Lock()
 	defer instsMap[vmName].monMu.Unlock()
 
-	b := !(instsMap[vmName].snapshotWasLoaded) // kasper should be enabled on the first run, i.e., before loading the snapshot
-	//log.Logf(1, "************ (%v) manager.checkEnableKasper: Received call! Returning %t. ************\n", vmName, b)
+	b := !(instsMap[vmName].snapshotWasLoaded) // kdfsan should be enabled on the first run, i.e., before loading the snapshot
+	//log.Logf(1, "************ (%v) manager.checkEnableKdfsan: Received call! Returning %t. ************\n", vmName, b)
 	instsMap[vmName].snapshotOpFinished = false // maybe this should be set somewhere else...
 	return b
 }

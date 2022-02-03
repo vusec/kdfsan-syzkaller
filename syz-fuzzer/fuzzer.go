@@ -466,13 +466,13 @@ func (fuzzer *Fuzzer) cmdManagerToSaveSnapshot() bool {
 	isWaitingTest = false ////
 	log.Logf(1, "****** fuzzer.cmdManagerToSaveSnapshot: SaveSnapshot done! ******\n")
 
-	// Check whether to enable Kasper for this run
-	log.Logf(1, "****** fuzzer.cmdManagerToSaveSnapshot: Sending CheckEnableKasper to manager... ******\n")
+	// Check whether to enable Kdfsan for this run
+	log.Logf(1, "****** fuzzer.cmdManagerToSaveSnapshot: Sending CheckEnableKdfsan to manager... ******\n")
 	rCheckEnableSpec := &rpctype.BoolRes{B: false}
-	if err := fuzzer.manager.Call("Manager.CheckEnableKasper", aName, rCheckEnableSpec); err != nil {
-		log.Fatalf("****** Manager.CheckEnableKasper call failed: %v ******", err)
+	if err := fuzzer.manager.Call("Manager.CheckEnableKdfsan", aName, rCheckEnableSpec); err != nil {
+		log.Fatalf("****** Manager.CheckEnableKdfsan call failed: %v ******", err)
 	}
-	log.Logf(1, "****** fuzzer.cmdManagerToSaveSnapshot: CheckEnableKasper done! ******\n")
+	log.Logf(1, "****** fuzzer.cmdManagerToSaveSnapshot: CheckEnableKdfsan done! ******\n")
 
 	return rCheckEnableSpec.B
 }

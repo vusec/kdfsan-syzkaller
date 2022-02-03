@@ -58,7 +58,7 @@ type RPCManagerView interface {
 	saveSnapshot(vmName string)
 	loadSnapshot(vmName string)
 	checkIsSaveSnapDone(vmName string) bool
-	checkEnableKasper(vmName string) bool
+	checkEnableKdfsan(vmName string) bool
 	getFuzzingTime() uint64
 }
 
@@ -227,8 +227,8 @@ func (serv *RPCServer) CheckIsSaveSnapDone(a *rpctype.NameArg, r *rpctype.BoolRe
 	return nil
 }
 
-func (serv *RPCServer) CheckEnableKasper(a *rpctype.NameArg, r *rpctype.BoolRes) error {
-	r.B = serv.mgr.checkEnableKasper(a.Name)
+func (serv *RPCServer) CheckEnableKdfsan(a *rpctype.NameArg, r *rpctype.BoolRes) error {
+	r.B = serv.mgr.checkEnableKdfsan(a.Name)
 	return nil
 }
 

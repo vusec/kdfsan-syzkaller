@@ -293,21 +293,21 @@ func (proc *Proc) executeRaw(opts *ipc.ExecOpts, p *prog.Prog, stat Stat) *ipc.P
 	ticket := proc.fuzzer.gate.Enter()
 	defer proc.fuzzer.gate.Leave(ticket)
 
-	enableKasper := false
+	enableKdfsan := false
 	if tmpCtr != 0 { ////
 		log.Logf(0, "*** proc.executeRaw: Requesting snapshot save... ***\n")
-		enableKasper = proc.fuzzer.cmdManagerToSaveSnapshot()
-		log.Logf(0, "*** proc.executeRaw: Snapshot taken! Returned enableKasper: %t ***\n", enableKasper)
+		enableKdfsan = proc.fuzzer.cmdManagerToSaveSnapshot()
+		log.Logf(0, "*** proc.executeRaw: Snapshot taken! Returned enableKdfsan: %t ***\n", enableKdfsan)
 	}
 
 	proc.logProgram(opts, p)
 
-	if enableKasper {
-		log.Logf(0, "*** proc.executeRaw: Enabling Kasper... ***\n")
-		if _, err := osutil.RunCmd(time.Minute, "", "bash", "-c", "cat /sys/kernel/debug/kasper/enable"); err != nil {
-			log.Logf(0, "Failed to enable Kasper: %v", err)
+	if enableKdfsan {
+		log.Logf(0, "*** proc.executeRaw: Enabling Kdfsan... ***\n")
+		if _, err := osutil.RunCmd(time.Minute, "", "bash", "-c", "cat /sys/kernel/debug/kdfsan/enable"); err != nil {
+			log.Logf(0, "Failed to enable Kdfsan: %v", err)
 		}
-		log.Logf(0, "*** proc.executeRaw: Kasper enabled ***\n")
+		log.Logf(0, "*** proc.executeRaw: Kdfsan enabled ***\n")
 	}
 
 	for try := 0; ; try++ {
@@ -325,12 +325,12 @@ func (proc *Proc) executeRaw(opts *ipc.ExecOpts, p *prog.Prog, stat Stat) *ipc.P
 		log.Logf(2, "result hanged=%v: %s", hanged, output)
 
 		if tmpCtr != 0 { ////
-			if enableKasper {
-				log.Logf(0, "*** proc.executeRaw: Finished test WITH Kasper! Requesting snapshot load... ***\n")
+			if enableKdfsan {
+				log.Logf(0, "*** proc.executeRaw: Finished test WITH Kdfsan! Requesting snapshot load... ***\n")
 				proc.fuzzer.cmdManagerToLoadSnapshot()
 				log.Fatalf("cmdManagerToLoadSnapshot should not return")
 			} else {
-				log.Logf(0, "*** proc.executeRaw: Finished test WITHOUT Kasper! Continuing... ***\n")
+				log.Logf(0, "*** proc.executeRaw: Finished test WITHOUT Kdfsan! Continuing... ***\n")
 			}
 		}
 		tmpCtr++ ////
