@@ -75,7 +75,7 @@ func parseKallsyms(kallsyms []byte, arch string) map[string]bool {
 	case "386", "amd64":
 		re = regexp.MustCompile(` T (dfs\$__ia32_|dfs\$__x64_|__ia32_|__x64_)?sys_([^\n]+)\n`)
 	case "arm", "arm64":
-		re = regexp.MustCompile(` T (__arm64_)?sys_([^\n]+)\n`)
+		re = regexp.MustCompile(` T (dfs\$__arm64_|__arm64_)?sys_([^\n]+)\n`)
 	case "ppc64le":
 		re = regexp.MustCompile(` T ()?sys_([^\n]+)\n`)
 	case "mips64le":
