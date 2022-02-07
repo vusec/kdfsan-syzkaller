@@ -104,14 +104,8 @@ endif
 	arch_test presubmit presubmit_parallel clean
 
 all: host target
-
-host:
-	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(HOSTGO) install ./syz-manager
-	$(MAKE) manager runtest repro mutate prog2c db upgrade
-
-target:
-	GOOS=$(TARGETGOOS) GOARCH=$(TARGETGOARCH) $(GO) install ./syz-fuzzer
-	$(MAKE) fuzzer execprog stress executor
+host: manager runtest repro mutate prog2c db upgrade
+target: fuzzer execprog stress executor
 
 # executor uses stacks of limited size, so no jumbo frames.
 executor:
