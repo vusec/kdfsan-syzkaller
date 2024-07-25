@@ -1308,6 +1308,7 @@ var linuxStackParams = &stackParams{
 		compile(`^( \[\<?(?:0x)?[0-9a-f]+\>?\])? should_fail(slab)?(\.[a-z0-9.]+)?\+0x`),
 	},
 	stripFramePrefixes: []string{
+		"dfs$",
 		"SYSC_",
 		"SyS_",
 		"sys_",
