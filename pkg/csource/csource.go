@@ -337,7 +337,7 @@ func (ctx *context) fmtCallBody(call prog.ExecCall) string {
 	funcName := ""
 	if native {
 		funcName = "syscall"
-		argsStrs = append(argsStrs, ctx.sysTarget.SyscallPrefix+callName)
+		argsStrs = append(argsStrs, ctx.sysTarget.SyscallPrefix+callName+" + 600")
 	} else if strings.HasPrefix(callName, "syz_") {
 		funcName = callName
 	} else {

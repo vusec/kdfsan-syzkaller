@@ -703,7 +703,7 @@ func (inst *instance) Run(timeout time.Duration, stop <-chan bool, command strin
 	} else {
 		args = []string{"ssh"}
 		args = append(args, sshArgs...)
-		args = append(args, inst.sshuser+"@localhost", "cd "+inst.targetDir()+" && echo 0 > /sys/kernel/debug/kdfsan/whitelist && cat /sys/kernel/debug/kdfsan/enable && "+command)
+		args = append(args, inst.sshuser+"@localhost", "cd "+inst.targetDir()+" && cat /sys/kernel/debug/kdfsan/enable && "+command)
 	}
 	if inst.debug {
 		log.Logf(0, "running command: %#v", args)

@@ -71,7 +71,7 @@ static intptr_t execute_syscall(const call_t* c, intptr_t a[kMaxArgs])
 {
 	if (c->call)
 		return c->call(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]);
-	return syscall(c->sys_nr, a[0], a[1], a[2], a[3], a[4], a[5]);
+	return syscall(c->sys_nr + 600, a[0], a[1], a[2], a[3], a[4], a[5]);
 }
 
 static void cover_open(cover_t* cov, bool extra)
