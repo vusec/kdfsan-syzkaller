@@ -1346,7 +1346,7 @@ func warningStackFmt(skip ...string) *stackFmt {
 
 // nolint: lll
 var linuxOopses = append([]*oops{
-	/* {
+	{
 		[]byte("BUG:"),
 		[]oopsFormat{
 			{
@@ -1708,7 +1708,7 @@ var linuxOopses = append([]*oops{
 			compile("BUG: no syscalls can create resource"),
 		},
 		crash.UnknownType,
-	}, */
+	},
 	{
 		[]byte("WARNING:"),
 		[]oopsFormat{
